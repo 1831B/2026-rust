@@ -1,5 +1,3 @@
-//! Monte Carlo Localization (MCL) particle filter with multi-distance ray-casting.
-
 use std::f64::consts::PI;
 use crate::config;
 use crate::subsystems::odometry::{Motion, Pose, Status};
@@ -53,26 +51,23 @@ struct SensorGeom {
 }
 
 const SENSORS: [SensorGeom; 3] = [
-    // Left sensor (facing 270)
     SensorGeom {
         bx: config::DIST_LEFT_X,
         by: config::DIST_LEFT_Y,
-        sin_f: -1.0, // sin(270)
-        cos_f: 0.0,  // cos(270)
+        sin_f: -1.0,
+        cos_f: 0.0,
     },
-    // Right sensor (facing 90)
     SensorGeom {
         bx: config::DIST_RIGHT_X,
         by: config::DIST_RIGHT_Y,
-        sin_f: 1.0,  // sin(90)
-        cos_f: 0.0,  // cos(90)
+        sin_f: 1.0,
+        cos_f: 0.0,
     },
-    // Front sensor (facing 0)
     SensorGeom {
         bx: config::DIST_FRONT_X,
         by: config::DIST_FRONT_Y,
-        sin_f: 0.0,  // sin(0)
-        cos_f: 1.0,  // cos(0)
+        sin_f: 0.0,
+        cos_f: 1.0,
     },
 ];
 
@@ -207,7 +202,6 @@ impl Mcl {
             return out;
         }
 
-        // 1. Motion prediction
         let abs_fwd = motion.forward.abs();
         let abs_turn = motion.turn.abs();
         for p in &mut self.particles {
@@ -219,7 +213,6 @@ impl Mcl {
             p.heading = Self::wrap360(p.heading + dh);
         }
 
-        // 2. Sensor measurement filtering
         let mut meas_in = [0.0; 3];
         let mut have = [false; 3];
         let mut any = false;
@@ -233,7 +226,6 @@ impl Mcl {
             }
         }
 
-        // 3. Observation update
         if any && status.turn_rate < MAX_TURN_RATE {
             let mut total = 0.0;
             for p in &mut self.particles {
@@ -268,7 +260,6 @@ impl Mcl {
                 p.weight /= total;
             }
 
-            // 4. Low-variance resampling
             let mut sq = 0.0;
             for p in &self.particles {
                 sq += p.weight * p.weight;
@@ -303,7 +294,6 @@ impl Mcl {
 
         self.estimate();
 
-        // 5. Compute correction
         if self.fusion_enabled && self.updates_since_set >= MIN_UPDATES {
             let ex = self.best_x - odom_pose.x;
             let ey = self.best_y - odom_pose.y;

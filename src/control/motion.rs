@@ -1,5 +1,3 @@
-//! Motion control algorithms: PID driving, turning, pursuit, and sensor-based goal approach.
-
 use std::f64::consts::PI;
 use std::time::Instant;
 use vexide::prelude::*;
@@ -86,7 +84,6 @@ pub async fn drive_distance(
         let err = target_ticks - traveled;
         let h_err = normalize_angle(start_h - ctx.odom.pose_heading);
 
-        // Convert PID mV output to Volts
         let drive_out_mv = drive_pid.update(err).clamp(-max_voltage * 1000.0, max_voltage * 1000.0);
         let head_out_mv = head_pid.update(h_err).clamp(-max_voltage * 400.0, max_voltage * 400.0);
 
@@ -181,10 +178,23 @@ pub async fn turn_to_heading(
     let mut lv = 0.0;
     let mut rv = 0.0;
     let t0 = Instant::now();
+    let mut best_err = normalize_angle(heading - ctx.odom.pose_heading).abs();
+    let mut runaway_since: Option<Instant> = None;
 
     loop {
         ctx.step(dt);
         let err = normalize_angle(heading - ctx.odom.pose_heading);
+        let abs_err = err.abs();
+        best_err = best_err.min(abs_err);
+        if abs_err > best_err + 25.0 && abs_err > 30.0 {
+            let since = *runaway_since.get_or_insert_with(Instant::now);
+            if since.elapsed().as_millis() > 150 {
+                println!("turn_to_heading aborted: error grew from {:.1} to {:.1} deg, check IMU direction", best_err, abs_err);
+                break;
+            }
+        } else {
+            runaway_since = None;
+        }
         let mut out_mv = pid.update(err);
         out_mv += (config::TURN_MIN_VOLTAGE * 1000.0 * (err.abs() / 2.0).min(1.0)).copysign(err);
         out_mv = out_mv.clamp(-max_voltage * 1000.0, max_voltage * 1000.0);

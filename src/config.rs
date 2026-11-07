@@ -1,5 +1,3 @@
-//! Robot configuration constants from 1831B-.
-
 use core::time::Duration;
 
 pub const LEFT_TOP_PORT: u8 = 1;
@@ -23,8 +21,8 @@ pub const DIST_LEFT_PORT: u8 = 7;
 pub const DIST_RIGHT_PORT: u8 = 8;
 pub const DIST_FRONT_PORT: u8 = 15;
 
-pub const ROBOT_LENGTH: f64 = 38.1 / 2.54; // 15.0 inches
-pub const ROBOT_WIDTH: f64 = 38.1 / 2.54;  // 15.0 inches
+pub const ROBOT_LENGTH: f64 = 38.1 / 2.54;
+pub const ROBOT_WIDTH: f64 = 38.1 / 2.54;
 pub const ROBOT_HEIGHT: f64 = 43.72 / 2.54;
 
 pub const GOAL_FRONT_READING: f64 = 0.95;
@@ -71,14 +69,14 @@ pub const SWING_KP: f64 = 250.0;
 pub const SWING_KI: f64 = 3.0;
 pub const SWING_KD: f64 = 10.0;
 
-pub const MAX_DRIVE_VOLTAGE: f64 = 12.0; // In Volts (12000 mV)
-pub const MAX_TURN_VOLTAGE: f64 = 10.0;  // In Volts (10000 mV)
+pub const MAX_DRIVE_VOLTAGE: f64 = 12.0;
+pub const MAX_TURN_VOLTAGE: f64 = 10.0;
 pub const DRIVE_SETTLE_ERROR: f64 = 0.5;
 pub const TURN_SETTLE_ERROR: f64 = 0.8;
 
-pub const DRIVE_SLEW: f64 = 1.2;          // 1.2V per step (1200 mV)
-pub const TURN_SLEW: f64 = 0.9;           // 0.9V per step (900 mV)
-pub const TURN_MIN_VOLTAGE: f64 = 0.7;     // 0.7V (700 mV)
+pub const DRIVE_SLEW: f64 = 1.2;
+pub const TURN_SLEW: f64 = 0.9;
+pub const TURN_MIN_VOLTAGE: f64 = 0.7;
 
 pub const LIFT_SCORE_POS: f64 = 320.0;
 pub const LIFT_LOW_POS: f64 = 150.0;

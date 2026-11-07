@@ -1,5 +1,3 @@
-//! 2-motor green-cartridge lift subsystem with position holding PID.
-
 use vexide::prelude::*;
 use vexide::smart::motor::BrakeMode;
 use std::time::Instant;

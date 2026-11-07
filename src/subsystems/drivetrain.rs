@@ -1,5 +1,3 @@
-//! 6-motor blue-cartridge drivetrain subsystem.
-
 use vexide::prelude::*;
 use vexide::smart::motor::BrakeMode;
 use crate::config;

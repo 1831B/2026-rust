@@ -1,5 +1,3 @@
-//! Autonomous match and skills routines.
-
 use vexide::prelude::*;
 use crate::config;
 use crate::field;
@@ -63,6 +61,7 @@ pub async fn route_mid_wall(
     let turned = |deg: f64| wrap360(facing + sense * deg);
 
     ctx.odom.set_field_pose(x_fn(config::ROBOT_LENGTH / 2.0), y_fn(field::MID), facing);
+    ctx.mcl.set_pose(x_fn(config::ROBOT_LENGTH / 2.0), y_fn(field::MID), facing);
 
     let stop_short = config::CLAW_REACH;
 
@@ -208,17 +207,17 @@ pub async fn run_route_by_index(
     top_mech: &mut TopMechanism,
 ) {
     match index {
-        0 => route_mid_wall(dt, ctx, lift, top_mech, false, false, 1).await, // Left Side
-        1 => route_mid_wall(dt, ctx, lift, top_mech, true, true, 1).await,   // Right Side
-        2 => route_mid_wall(dt, ctx, lift, top_mech, false, true, 1).await,  // Left Mirror
-        3 => route_mid_wall(dt, ctx, lift, top_mech, true, false, 1).await,  // Right Mirror
-        4 => route_mid_wall(dt, ctx, lift, top_mech, false, true, 0).await,  // Safe Mirror
-        5 => route_mid_wall(dt, ctx, lift, top_mech, false, false, 0).await, // Safe
+        0 => route_mid_wall(dt, ctx, lift, top_mech, false, false, 1).await,
+        1 => route_mid_wall(dt, ctx, lift, top_mech, true, true, 1).await,
+        2 => route_mid_wall(dt, ctx, lift, top_mech, false, true, 1).await,
+        3 => route_mid_wall(dt, ctx, lift, top_mech, true, false, 1).await,
+        4 => route_mid_wall(dt, ctx, lift, top_mech, false, true, 0).await,
+        5 => route_mid_wall(dt, ctx, lift, top_mech, false, false, 0).await,
         6 => {
             ctx.odom.reset(0.0, 0.0, 0.0);
             motion::calibrate_turn_scale(dt, ctx, 2.0).await;
-        } // Spin Calibrate
-        7 => route_mid_wall(dt, ctx, lift, top_mech, false, false, 2).await, // Skills
+        }
+        7 => route_mid_wall(dt, ctx, lift, top_mech, false, false, 2).await,
         _ => route_mid_wall(dt, ctx, lift, top_mech, false, false, 0).await,
     }
 }

@@ -1,5 +1,3 @@
-//! Modern touchscreen telemetry display: field map, system status, auton selector, fault list.
-
 use vexide::color::Color;
 use vexide::display::{Alignment, Display, Font, FontFamily, FontSize, Line, Rect, Text, TouchState};
 use std::f64::consts::PI;
@@ -187,7 +185,6 @@ impl TelemetryUi {
         Self::draw_text_m(display, SCR_W / 2 - 25, 3, C_GOLD, "1831B");
         Self::draw_line(display, 0, TOP_H, SCR_W, TOP_H, C_GOLD_D);
 
-        // Mode pill
         let mode = robot_state.get_mode();
         let mode_str = match mode {
             Mode::Boot => "BOOT",
@@ -202,7 +199,6 @@ impl TelemetryUi {
         Self::fill_rect(display, 15, 10, 21, 14, mode_col);
         Self::draw_text_s(display, 27, 8, C_WHITE, mode_str);
 
-        // Battery gauge
         let batt = vexide::battery::capacity() * 100.0;
         let bc = if batt > 50.0 { C_GOOD } else if batt > 25.0 { C_WARN } else { C_BAD };
         Self::fill_rect(display, SCR_W - 72, 5, SCR_W - 8, 19, C_PANEL2);
@@ -250,14 +246,12 @@ impl TelemetryUi {
         let pose = odom.get_pose();
         self.update_trail(pose.x, pose.y);
 
-        // 1. Draw Field Map
         let scale = size as f64 / config::FIELD_SIZE;
         let px = |fx: f64| mx + (fx * scale + 0.5) as i16;
         let py = |fy: f64| my + size - (fy * scale + 0.5) as i16;
 
         Self::fill_rect(display, mx - 2, my - 2, mx + size + 2, my + size + 2, C_PANEL);
 
-        // Grid lines
         for g in 1..=5 {
             let v = g as f64 * config::FIELD_SIZE / 6.0;
             Self::draw_line(display, px(v), my + 2, px(v), my + size - 2, C_TRACK);
@@ -265,7 +259,6 @@ impl TelemetryUi {
         }
         Self::outline_rect(display, mx, my, mx + size, my + size, C_GOLD_D);
 
-        // Goal spots
         for g in &field::GOALS {
             let cx = px(g.x);
             let cy = py(g.y);
@@ -274,14 +267,12 @@ impl TelemetryUi {
             Self::outline_rect(display, cx - r, cy - r, cx + r, cy + r, c);
         }
 
-        // Trail
         for i in 0..self.trail_len {
             let idx = (self.trail_head + TRAIL_N - self.trail_len + i) % TRAIL_N;
             let tc = if i * 3 > self.trail_len * 2 { C_GOLD } else { C_GOLD_D };
             Self::fill_rect(display, px(self.trail_x[idx]) - 1, py(self.trail_y[idx]) - 1, px(self.trail_x[idx]) + 1, py(self.trail_y[idx]) + 1, tc);
         }
 
-        // Robot outline & heading vector
         let hr = pose.heading * PI / 180.0;
         let sn = hr.sin();
         let cs = hr.cos();
@@ -305,7 +296,6 @@ impl TelemetryUi {
         Self::draw_line(display, rx, ry, nx, ny, C_WHITE);
         Self::fill_rect(display, rx - 1, ry - 1, rx + 1, ry + 1, C_GOLD);
 
-        // 2. Right Info Panel
         let right_x = mx + size + 18;
         let tx = right_x + 140;
 
@@ -316,7 +306,6 @@ impl TelemetryUi {
         Self::draw_text_s(display, tx, BODY_Y0 + 50, C_MUTED, "H");
         Self::draw_text_m(display, tx + 18, BODY_Y0 + 47, C_GOLD, &format!("{:.0}°", pose.heading));
 
-        // Subsystems status chips
         let chips = [
             ("IMU 1", odom.channels[0].mount_known),
             ("IMU 2", odom.channels[1].mount_known),
@@ -338,7 +327,6 @@ impl TelemetryUi {
             Self::draw_text_s(display, ch_x + 10, ch_y + 1, if *ok { C_WHITE } else { C_MUTED }, label);
         }
 
-        // Auton summary card
         let ay = BODY_Y1 - 30;
         Self::fill_rect(display, right_x, ay, SCR_W - 10, BODY_Y1, C_PANEL);
         let conf = auton_sel.is_confirmed();
@@ -357,7 +345,6 @@ impl TelemetryUi {
     ) {
         let y0 = BODY_Y0;
 
-        // Temperatures row
         let temps = [
             ("DRV L", dt.left_temp()),
             ("DRV R", dt.right_temp()),
@@ -374,7 +361,6 @@ impl TelemetryUi {
             Self::draw_text_c(display, cx + cw / 2, y0 + 36, C_MUTED, name);
         }
 
-        // Systems Grid Tiles
         let st = odom.get_status();
         let batt_v = vexide::battery::voltage();
         let claw_str = match top_mech.claw_state {
@@ -436,7 +422,6 @@ impl TelemetryUi {
             Self::draw_text_s(display, x0 + 26, y0 + 8, if on { C_BG } else { C_WHITE }, auton_sel.name_at(i));
         }
 
-        // Selection description card & Confirm button
         let dy = BODY_Y1 - 36;
         Self::fill_rect(display, 10, dy, SCR_W - 10, BODY_Y1, C_PANEL);
         Self::draw_text_s(display, 22, dy + 6, on_col, auton_sel.name_at(sel));
@@ -495,7 +480,6 @@ impl TelemetryUi {
         let tx = touch.point.x;
         let ty = touch.point.y;
 
-        // Bottom tab navigation
         if ty >= BOT_Y {
             for i in 0..PAGE_COUNT {
                 let (x0, x1) = Self::tab_x(i);
@@ -507,13 +491,11 @@ impl TelemetryUi {
             return;
         }
 
-        // Top bar click cycles screen
         if ty < TOP_H {
             self.cycle_screen();
             return;
         }
 
-        // Auton screen touch selection & confirm
         if self.current_screen == Screen::AutonSelect && auton_sel.count() > 0 {
             let total = auton_sel.count();
             let dy = BODY_Y1 - 36;

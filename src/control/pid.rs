@@ -1,5 +1,3 @@
-//! Proportional-Integral-Derivative (PID) controller with anti-windup and settle detection.
-
 use std::time::Instant;
 
 #[derive(Debug, Clone)]
@@ -64,7 +62,6 @@ impl Pid {
         self.integral += error * dt;
         self.integral = self.integral.clamp(-self.integral_limit, self.integral_limit);
 
-        // Reset integral when error crosses zero or within small threshold
         if error.abs() < self.settle_error * 0.1 {
             self.integral = 0.0;
         }

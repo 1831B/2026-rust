@@ -1,5 +1,3 @@
-//! Operator control: arcade drive with exponential response, mechanism bindings, and controller LCD.
-
 use std::time::Instant;
 use vexide::prelude::*;
 use crate::config;
@@ -11,7 +9,7 @@ use crate::subsystems::top_mechanism::TopMechanism;
 
 const DEADZONE: f64 = 7.0;
 const EXPO: f64 = 1.8;
-const SLEW_RATE: f64 = 0.9; // 900 mV per step in C++ -> 0.9V
+const SLEW_RATE: f64 = 0.9;
 
 fn apply_expo(v: f64, expo: f64) -> f64 {
     let sign = if v < 0.0 { -1.0 } else { 1.0 };
@@ -75,7 +73,6 @@ impl DriverControl {
             Err(_) => return,
         };
 
-        // 1. Drivetrain Arcade Control (Left Y = throttle, Right X = turn)
         let mut raw_throttle = state.left_stick.y_raw() as f64;
         let mut raw_turn = state.right_stick.x_raw() as f64;
 
@@ -116,12 +113,10 @@ impl DriverControl {
         }
         dt.drive_voltage(self.left_out, self.right_out);
 
-        // 2. Claw Toggle (Button A)
         if state.button_a.is_now_pressed() {
             top_mech.claw_toggle();
         }
 
-        // 3. Lift Manual Control
         let l1 = state.button_l1.is_pressed();
         let l2 = state.button_l2.is_pressed();
 
@@ -141,7 +136,6 @@ impl DriverControl {
             self.lift_down_held = false;
         }
 
-        // 4. Lift Presets (X = score, B = home)
         if state.button_x.is_now_pressed() {
             lift.move_to_position(config::LIFT_SCORE_POS, 2000.0).await;
         }
@@ -149,7 +143,6 @@ impl DriverControl {
             lift.move_to_position(config::LIFT_HOME_POS, 2000.0).await;
         }
 
-        // 5. Emergency Stop (L1 + R1 + L2)
         if l1 && state.button_r1.is_pressed() && l2 {
             dt.emergency_stop();
             lift.stop();
@@ -161,7 +154,6 @@ impl DriverControl {
         lift.update();
         top_mech.update();
 
-        // 6. Match Time Alerts
         let elapsed = self.match_start.elapsed();
         let remain = if elapsed < config::MATCH_DURATION {
             config::MATCH_DURATION - elapsed
@@ -178,7 +170,6 @@ impl DriverControl {
             self.alerted_10 = true;
         }
 
-        // 7. Controller Telemetry Cycling (every 400ms)
         if self.ctrl_update_timer.elapsed().as_millis() > 400 {
             self.ctrl_update_timer = Instant::now();
             let secs = remain.as_secs();

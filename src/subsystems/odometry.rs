@@ -1,5 +1,3 @@
-//! High-precision dual-IMU and tracking-wheel odometry system with field anchoring.
-
 use std::f64::consts::PI;
 use std::time::Instant;
 use vexide::prelude::*;
@@ -436,7 +434,6 @@ impl Odometry {
         }
         self.heading_from_imu = n > 0;
 
-        // Auto sign learning if tilted
         for i in 0..2 {
             let c = &mut self.channels[i];
             if !incs[i].valid || c.verified {
@@ -461,7 +458,6 @@ impl Odometry {
             }
         }
 
-        // Check dual IMU agreement
         if incs[0].valid && incs[1].valid && self.channels[0].verified && self.channels[1].verified {
             self.cum_diff += incs[0].inc - incs[1].inc;
             self.turn_total += fused_dh.abs();
@@ -586,7 +582,6 @@ impl Odometry {
     }
 }
 
-/// Bundles the robot's sensors for unified reading and odometry stepping.
 pub struct Sensors<'a> {
     pub imu: &'a InertialSensor,
     pub imu2: &'a InertialSensor,
@@ -658,7 +653,6 @@ impl<'a> Sensors<'a> {
     }
 }
 
-/// Context bundling odometry state and sensors for continuous updates during motion routines.
 pub struct OdometryContext<'a> {
     pub odom: &'a mut Odometry,
     pub mcl: &'a mut Mcl,

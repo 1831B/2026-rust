@@ -1,5 +1,3 @@
-//! Robot operating mode and boot phase tracking.
-
 use core::sync::atomic::{AtomicU8, Ordering};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

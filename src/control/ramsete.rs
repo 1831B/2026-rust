@@ -1,5 +1,3 @@
-//! RAMSETE nonlinear unicycle trajectory tracking controller.
-
 use std::f64::consts::PI;
 use std::time::Instant;
 use vexide::prelude::*;

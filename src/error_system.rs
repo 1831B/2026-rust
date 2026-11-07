@@ -1,5 +1,3 @@
-//! Diagnostics and fault tracking system.
-
 use std::time::Instant;
 use crate::config;
 
@@ -158,7 +156,6 @@ impl ErrorSystem {
             self.clear(ErrorCode::MotorOverheat);
         }
 
-        // Timeout stale warnings
         let now = Instant::now();
         for entry in &mut self.errors {
             if entry.active

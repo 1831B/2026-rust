@@ -1,5 +1,3 @@
-//! Field coordinates and goal definitions.
-
 pub const fn at(grid: f64) -> f64 {
     if grid <= -1700.0 {
         1.58

@@ -1,8 +1,14 @@
-//! Autonomous routine selector.
+#[derive(Clone, Copy)]
+pub struct RoutineStart {
+    pub x: f64,
+    pub y: f64,
+    pub h: f64,
+}
 
 pub struct AutonomousRoutine {
     pub name: String,
     pub description: String,
+    pub start: Option<RoutineStart>,
 }
 
 pub struct AutonomousSelector {
@@ -26,11 +32,16 @@ impl AutonomousSelector {
         }
     }
 
-    pub fn add_routine(&mut self, name: &str, desc: &str) {
+    pub fn add_routine(&mut self, name: &str, desc: &str, start: Option<RoutineStart>) {
         self.routines.push(AutonomousRoutine {
             name: name.to_string(),
             description: desc.to_string(),
+            start,
         });
+    }
+
+    pub fn start_pose(&self) -> Option<RoutineStart> {
+        self.routines.get(self.selection).and_then(|r| r.start)
     }
 
     pub fn select(&mut self, index: isize) {

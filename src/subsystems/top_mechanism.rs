@@ -1,5 +1,3 @@
-//! Claw mechanism subsystem.
-
 use vexide::prelude::*;
 use vexide::math::Angle;
 use vexide::smart::motor::BrakeMode;
@@ -30,8 +28,6 @@ impl TopMechanism {
     }
 
     fn motor_to_position(m: &mut Motor, deg: f64, speed_pct: f64) {
-        // Green gearset: 200 max RPM. 6.0 in C++ PROS was (speed_pct * 6.0) for blue (600 rpm) or 2.0 for green.
-        // In C++ it was: static_cast<int>(speed_pct * 6.0)
         let rpm = (speed_pct * 2.0) as i32;
         let _ = m.set_position_target(Angle::from_degrees(deg), rpm);
     }
