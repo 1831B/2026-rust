@@ -1,0 +1,18 @@
+[package]
+name = "robot-1831b"
+version = "0.1.0"
+edition = "2024"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+
+# These fields configure default behavior for uploads with `cargo v5`.
+[package.metadata.v5]
+upload-strategy = "differential"
+slot = 1
+icon = "cool-x"
+compress = true
+
+[dependencies]
+vexide = { version = "0.8.0", features = ["full", "default-sdk"] }
