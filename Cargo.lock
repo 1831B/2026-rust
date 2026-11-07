@@ -245,6 +245,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "robot-1831b"
+version = "0.1.0"
+dependencies = [
+ "vexide",
+]
+
+[[package]]
 name = "rustc_version"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -353,13 +360,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3ae828aa394de34c7de08f522d1b86bd1c182c668d27da69caadda00590f26d"
 dependencies = [
  "lock_api",
-]
-
-[[package]]
-name = "test-v5"
-version = "0.1.0"
-dependencies = [
- "vexide",
 ]
 
 [[package]]

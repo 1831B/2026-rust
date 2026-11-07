@@ -1,4 +1,4 @@
-//! 2-motor green-cartridge lift subsystem with PID position holding.
+//! 2-motor green-cartridge lift subsystem with position holding PID.
 
 use vexide::prelude::*;
 use vexide::smart::motor::BrakeMode;
@@ -34,7 +34,6 @@ impl Lift {
             right_motor,
             state: LiftState::Idle,
             target_position: 0.0,
-            // Gains in mV, converted to Volts upon output
             hold_pid: Pid::new(3.0, 0.01, 15.0, 40.0, 3.0, 150.0),
         }
     }
@@ -81,7 +80,7 @@ impl Lift {
     }
 
     pub async fn move_to_position(&mut self, degrees: f64, timeout_ms: f64) {
-        let mut pos_pid = Pid::new(3.0, 0.01, 15.0, 40.0, 3.0, 200.0);
+        let mut pos_pid = Pid::new(80.0, 0.01, 6.0, 40.0, 3.0, 200.0);
         let start = Instant::now();
 
         loop {
@@ -104,23 +103,32 @@ impl Lift {
     }
 
     pub fn position(&self) -> f64 {
-        self.left_motor
-            .position()
-            .map(|a| a.as_degrees())
-            .unwrap_or(0.0)
+        let lp = self.left_motor.position().map(|a| a.as_degrees()).ok();
+        let rp = self.right_motor.position().map(|a| a.as_degrees()).ok();
+        match (lp, rp) {
+            (Some(l), Some(r)) => (l + r) / 2.0,
+            (Some(l), None) => l,
+            (None, Some(r)) => r,
+            (None, None) => 0.0,
+        }
     }
 
-    pub fn temperature(&self) -> f64 {
-        let t1 = self.left_motor.temperature().unwrap_or(0.0);
-        let t2 = self.right_motor.temperature().unwrap_or(0.0);
-        t1.max(t2)
+    pub fn left_temp(&self) -> f64 {
+        self.left_motor.temperature().unwrap_or(0.0)
+    }
+
+    pub fn right_temp(&self) -> f64 {
+        self.right_motor.temperature().unwrap_or(0.0)
     }
 
     pub fn is_at_target(&self, tolerance: f64) -> bool {
         (self.target_position - self.position()).abs() < tolerance
     }
 
-    pub fn is_ok(&self) -> bool {
-        self.left_motor.position().is_ok() && self.right_motor.position().is_ok()
+    pub fn is_ok(&self) -> (bool, bool) {
+        (
+            self.left_motor.position().is_ok(),
+            self.right_motor.position().is_ok(),
+        )
     }
 }

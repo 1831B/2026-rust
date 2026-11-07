@@ -6,15 +6,15 @@ use crate::config;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCode {
     ImuMissing = 0,
+    Imu2Missing,
     ForwardTrackerMissing,
     LeftDriveFault,
     RightDriveFault,
     LiftFault,
-    ClawFlipFault,
-    IntakeFault,
     ClawFault,
     LowBattery,
     MotorOverheat,
+    ImuMismatch,
 }
 
 pub const ERROR_COUNT: usize = 10;
@@ -22,29 +22,29 @@ pub const ERROR_COUNT: usize = 10;
 impl ErrorCode {
     pub const ALL: [ErrorCode; ERROR_COUNT] = [
         ErrorCode::ImuMissing,
+        ErrorCode::Imu2Missing,
         ErrorCode::ForwardTrackerMissing,
         ErrorCode::LeftDriveFault,
         ErrorCode::RightDriveFault,
         ErrorCode::LiftFault,
-        ErrorCode::ClawFlipFault,
-        ErrorCode::IntakeFault,
         ErrorCode::ClawFault,
         ErrorCode::LowBattery,
         ErrorCode::MotorOverheat,
+        ErrorCode::ImuMismatch,
     ];
 
     pub const fn name(&self) -> &'static str {
         match self {
             Self::ImuMissing => "IMU Missing",
+            Self::Imu2Missing => "IMU2 Missing",
             Self::ForwardTrackerMissing => "Fwd Tracker Miss",
             Self::LeftDriveFault => "Left Drive Fault",
             Self::RightDriveFault => "Right Drive Fault",
             Self::LiftFault => "Lift Fault",
-            Self::ClawFlipFault => "Claw Flip Fault",
-            Self::IntakeFault => "Intake Fault",
             Self::ClawFault => "Claw Fault",
             Self::LowBattery => "Low Battery",
             Self::MotorOverheat => "Motor Overheat",
+            Self::ImuMismatch => "IMU Mismatch",
         }
     }
 }
@@ -123,46 +123,37 @@ impl ErrorSystem {
     pub fn update_hardware(
         &mut self,
         imu_ok: bool,
+        imu2_ok: bool,
         tracker_ok: bool,
         battery_volts: f64,
         max_temp: f64,
     ) {
         if !imu_ok {
-            self.set(
-                ErrorCode::ImuMissing,
-                Severity::Critical,
-                "IMU disconnected",
-            );
+            self.set(ErrorCode::ImuMissing, Severity::Critical, "IMU disconnected");
         } else {
             self.clear(ErrorCode::ImuMissing);
         }
 
+        if !imu2_ok {
+            self.set(ErrorCode::Imu2Missing, Severity::Critical, "IMU2 disconnected");
+        } else {
+            self.clear(ErrorCode::Imu2Missing);
+        }
+
         if !tracker_ok {
-            self.set(
-                ErrorCode::ForwardTrackerMissing,
-                Severity::Critical,
-                "Fwd tracker lost",
-            );
+            self.set(ErrorCode::ForwardTrackerMissing, Severity::Critical, "Fwd tracker lost");
         } else {
             self.clear(ErrorCode::ForwardTrackerMissing);
         }
 
         if battery_volts < config::LOW_BATTERY_THRESHOLD {
-            self.set(
-                ErrorCode::LowBattery,
-                Severity::Critical,
-                "Battery critical",
-            );
+            self.set(ErrorCode::LowBattery, Severity::Critical, "Battery critical");
         } else {
             self.clear(ErrorCode::LowBattery);
         }
 
         if max_temp > 55.0 {
-            self.set(
-                ErrorCode::MotorOverheat,
-                Severity::Warning,
-                "Motor overheating",
-            );
+            self.set(ErrorCode::MotorOverheat, Severity::Warning, "Motor overheating");
         } else {
             self.clear(ErrorCode::MotorOverheat);
         }
