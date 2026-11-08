@@ -58,23 +58,59 @@ impl TopMechanism {
         }
     }
 
-    pub fn claw_open(&mut self) {
+    /// Non-blocking: starts moving the claw and returns immediately.
+    /// Used by opcontrol toggle (completion detected via `update()` each tick).
+    fn claw_open_start(&mut self) {
         self.claw_state = ClawState::Moving;
         self.claw_target_deg = config::CLAW_OPEN_POS;
         Self::motor_to_position(&mut self.claw_motor, config::CLAW_OPEN_POS, config::CLAW_SPEED_PCT);
     }
 
-    pub fn claw_close(&mut self) {
+    fn claw_close_start(&mut self) {
         self.claw_state = ClawState::Moving;
         self.claw_target_deg = config::CLAW_CLOSED_POS;
         Self::motor_to_position(&mut self.claw_motor, config::CLAW_CLOSED_POS, config::CLAW_SPEED_PCT);
     }
 
+    /// Async: starts the move and waits until the motor arrives, then applies Hold.
+    /// Use this in autonomous routines.
+    pub async fn claw_open(&mut self) {
+        self.claw_open_start();
+        self.wait_for_claw(config::CLAW_OPEN_POS, 1500).await;
+    }
+
+    pub async fn claw_close(&mut self) {
+        self.claw_close_start();
+        self.wait_for_claw(config::CLAW_CLOSED_POS, 1500).await;
+    }
+
+    /// Waits until the claw motor reaches `target_deg` (or times out), then holds.
+    async fn wait_for_claw(&mut self, target_deg: f64, timeout_ms: u64) {
+        let start = Instant::now();
+        while start.elapsed().as_millis() < timeout_ms as u128 {
+            let pos = self.claw_motor.position()
+                .map(|a| a.as_degrees())
+                .unwrap_or(target_deg);
+            let vel = self.claw_motor.velocity().unwrap_or(100.0).abs();
+            if (pos - target_deg).abs() < 8.0 && vel < 5.0 {
+                break;
+            }
+            sleep(core::time::Duration::from_millis(20)).await;
+        }
+        let _ = self.claw_motor.brake(BrakeMode::Hold);
+        self.claw_state = if target_deg == config::CLAW_OPEN_POS {
+            ClawState::Open
+        } else {
+            ClawState::Closed
+        };
+    }
+
+    /// Non-blocking toggle for opcontrol (completion detected via `update()` each tick).
     pub fn claw_toggle(&mut self) {
         println!("claw toggle from state {:?}, pos {:?}", self.claw_state, self.claw_motor.position().map(|a| a.as_degrees()).ok());
         match self.claw_state {
-            ClawState::Open | ClawState::Moving => self.claw_close(),
-            ClawState::Closed => self.claw_open(),
+            ClawState::Open | ClawState::Moving => self.claw_close_start(),
+            ClawState::Closed => self.claw_open_start(),
         }
     }
 

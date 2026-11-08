@@ -22,21 +22,21 @@ pub async fn grab_pin(
     ctx: &mut OdometryContext<'_>,
     top_mech: &mut TopMechanism,
 ) -> bool {
-    top_mech.claw_close();
+    top_mech.claw_close().await;
     if top_mech.claw_grabbed(900).await {
         return true;
     }
     let nudges = [2.0, 2.0, -6.0];
     for n in nudges {
-        top_mech.claw_open();
+        top_mech.claw_open().await;
         sleep(core::time::Duration::from_millis(200)).await;
         motion::drive_distance(dt, ctx, n, 6.0, 1000.0).await;
-        top_mech.claw_close();
+        top_mech.claw_close().await;
         if top_mech.claw_grabbed(900).await {
             return true;
         }
     }
-    top_mech.claw_open();
+    top_mech.claw_open().await;
     sleep(core::time::Duration::from_millis(200)).await;
     false
 }
@@ -78,7 +78,7 @@ pub async fn route_mid_wall(
         GOAL_SPEED,
         2500.0,
     ).await;
-    top_mech.claw_open();
+    top_mech.claw_open().await;
     sleep(core::time::Duration::from_millis(250)).await;
 
     motion::drive_straight_to(dt, ctx, x_fn(field::LEFT_GOAL_X), y_fn(field::MID), FULL_SPEED, 2000.0).await;
@@ -104,7 +104,7 @@ pub async fn route_mid_wall(
             GOAL_SPEED,
             2500.0,
         ).await;
-        top_mech.claw_open();
+        top_mech.claw_open().await;
         sleep(core::time::Duration::from_millis(250)).await;
     }
 
@@ -139,7 +139,7 @@ pub async fn route_mid_wall(
             GOAL_SPEED,
             3000.0,
         ).await;
-        top_mech.claw_open();
+        top_mech.claw_open().await;
         sleep(core::time::Duration::from_millis(300)).await;
 
         motion::drive_straight_to(dt, ctx, x_fn(field::LEFT_MID_PIN_X), y_fn(field::LEFT_LOWER_PIN_Y), FULL_SPEED, 2500.0).await;
@@ -163,7 +163,7 @@ pub async fn route_mid_wall(
             GOAL_SPEED,
             3000.0,
         ).await;
-        top_mech.claw_open();
+        top_mech.claw_open().await;
         sleep(core::time::Duration::from_millis(300)).await;
 
         motion::drive_straight_to(dt, ctx, x_fn(field::MID), y_fn(field::MIDDLE_PINS_Y), FULL_SPEED, 2500.0).await;
@@ -187,7 +187,7 @@ pub async fn route_mid_wall(
             GOAL_SPEED,
             3000.0,
         ).await;
-        top_mech.claw_open();
+        top_mech.claw_open().await;
         sleep(core::time::Duration::from_millis(300)).await;
     }
 
