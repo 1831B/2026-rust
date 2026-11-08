@@ -65,6 +65,8 @@ pub async fn route_mid_wall(
     ctx.mcl.set_pose(x_fn(config::ROBOT_LENGTH / 2.0), y_fn(field::MID), facing);
 
     let stop_short = config::CLAW_REACH;
+    // Preload release: drive 9 cm (3.54") closer than normal stop_short
+    let preload_stop_short = (stop_short - 9.0 / 2.54).max(0.0);
 
     motion::drive_straight_to(dt, ctx, x_fn(field::LEFT_GOAL_X), y_fn(field::MID), FULL_SPEED, 2000.0).await;
     motion::turn_to_heading(dt, ctx, turned(90.0), 10.0, 1500.0).await;
@@ -73,7 +75,7 @@ pub async fn route_mid_wall(
         dt,
         ctx,
         x_fn(field::LEFT_GOAL_X),
-        y_fn(field::LEFT_GOAL_LOW_Y + stop_short),
+        y_fn(field::LEFT_GOAL_LOW_Y + preload_stop_short),
         8.0,
         GOAL_SPEED,
         2500.0,
