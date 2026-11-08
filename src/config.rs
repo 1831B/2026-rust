@@ -12,6 +12,7 @@ pub const LIFT_RIGHT_PORT: u8 = 10;
 pub const LIFT_LEFT_REVERSED: bool = false;
 pub const LIFT_RIGHT_REVERSED: bool = true;
 pub const CLAW_PORT: u8 = 16;
+pub const CLAW_REVERSED: bool = false;
 
 pub const IMU_PORT: u8 = 13;
 pub const IMU2_PORT: u8 = 14;

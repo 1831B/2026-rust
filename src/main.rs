@@ -68,7 +68,11 @@ impl Robot {
         let lift_right = Motor::new(peripherals.port_10, Gearset::Green, lift_r_dir);
         let lift = Lift::new(lift_left, lift_right);
 
-        let claw_motor = Motor::new(peripherals.port_16, Gearset::Green, Direction::Forward);
+        let claw_motor = Motor::new(
+            peripherals.port_16,
+            Gearset::Green,
+            if config::CLAW_REVERSED { Direction::Reverse } else { Direction::Forward },
+        );
         let top_mech = TopMechanism::new(claw_motor);
 
         let mut imu = InertialSensor::new(peripherals.port_13);

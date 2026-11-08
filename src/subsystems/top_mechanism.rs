@@ -47,6 +47,7 @@ impl TopMechanism {
     }
 
     pub fn claw_toggle(&mut self) {
+        println!("claw toggle from state {:?}, pos {:?}", self.claw_state, self.claw_motor.position().map(|a| a.as_degrees()).ok());
         match self.claw_state {
             ClawState::Open | ClawState::Moving => self.claw_close(),
             ClawState::Closed => self.claw_open(),
