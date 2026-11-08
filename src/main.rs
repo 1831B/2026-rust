@@ -49,13 +49,21 @@ impl Robot {
         robot_state.set_boot_phase(BootPhase::HardwareInit);
         TelemetryUi::show_boot_phase(&mut display, BootPhase::HardwareInit.name(), true);
 
-        let left_front = Motor::new(peripherals.port_1, Gearset::Blue, Direction::Forward);
-        let left_mid = Motor::new(peripherals.port_2, Gearset::Blue, Direction::Forward);
-        let left_back = Motor::new(peripherals.port_3, Gearset::Blue, Direction::Forward);
+        // DRIVE_REVERSED=true means left side is Reverse and right side is Forward
+        // (physical motor mounting on 1831B requires this for positive = forward)
+        let (left_dir, right_dir) = if config::DRIVE_REVERSED {
+            (Direction::Reverse, Direction::Forward)
+        } else {
+            (Direction::Forward, Direction::Reverse)
+        };
 
-        let right_front = Motor::new(peripherals.port_4, Gearset::Blue, Direction::Reverse);
-        let right_mid = Motor::new(peripherals.port_5, Gearset::Blue, Direction::Reverse);
-        let right_back = Motor::new(peripherals.port_6, Gearset::Blue, Direction::Reverse);
+        let left_front = Motor::new(peripherals.port_1, Gearset::Blue, left_dir);
+        let left_mid = Motor::new(peripherals.port_2, Gearset::Blue, left_dir);
+        let left_back = Motor::new(peripherals.port_3, Gearset::Blue, left_dir);
+
+        let right_front = Motor::new(peripherals.port_4, Gearset::Blue, right_dir);
+        let right_mid = Motor::new(peripherals.port_5, Gearset::Blue, right_dir);
+        let right_back = Motor::new(peripherals.port_6, Gearset::Blue, right_dir);
 
         let drivetrain = Drivetrain::new(
             left_front, left_mid, left_back,

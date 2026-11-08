@@ -14,6 +14,8 @@ pub enum ClawState {
 pub struct TopMechanism {
     pub claw_motor: Motor,
     pub claw_state: ClawState,
+    /// Target position in degrees for the current move, used to detect arrival
+    claw_target_deg: f64,
 }
 
 impl TopMechanism {
@@ -24,26 +26,48 @@ impl TopMechanism {
         Self {
             claw_motor,
             claw_state: ClawState::Open,
+            claw_target_deg: config::CLAW_OPEN_POS,
         }
     }
 
     fn motor_to_position(m: &mut Motor, deg: f64, speed_pct: f64) {
-        let rpm = (speed_pct * 2.0) as i32;
+        // Green gearset = 200 RPM max; scale speed_pct (0–100) to RPM
+        let rpm = ((speed_pct / 100.0) * 200.0) as i32;
         let _ = m.set_position_target(Angle::from_degrees(deg), rpm);
     }
 
-    pub fn update(&mut self) {}
+    /// Call every loop tick (opcontrol or auto) to detect claw arrival and re-engage Hold.
+    pub fn update(&mut self) {
+        if self.claw_state == ClawState::Moving {
+            let pos = self.claw_motor.position()
+                .map(|a| a.as_degrees())
+                .unwrap_or(self.claw_target_deg);
+            let vel = self.claw_motor.velocity().unwrap_or(100.0).abs();
+            let near = (pos - self.claw_target_deg).abs() < 8.0;
+            let slow = vel < 5.0;
+
+            if near && slow {
+                // Arrived — switch to Hold so the claw grips/stays in place
+                let _ = self.claw_motor.brake(BrakeMode::Hold);
+                self.claw_state = if self.claw_target_deg == config::CLAW_OPEN_POS {
+                    ClawState::Open
+                } else {
+                    ClawState::Closed
+                };
+            }
+        }
+    }
 
     pub fn claw_open(&mut self) {
         self.claw_state = ClawState::Moving;
+        self.claw_target_deg = config::CLAW_OPEN_POS;
         Self::motor_to_position(&mut self.claw_motor, config::CLAW_OPEN_POS, config::CLAW_SPEED_PCT);
-        self.claw_state = ClawState::Open;
     }
 
     pub fn claw_close(&mut self) {
         self.claw_state = ClawState::Moving;
+        self.claw_target_deg = config::CLAW_CLOSED_POS;
         Self::motor_to_position(&mut self.claw_motor, config::CLAW_CLOSED_POS, config::CLAW_SPEED_PCT);
-        self.claw_state = ClawState::Closed;
     }
 
     pub fn claw_toggle(&mut self) {

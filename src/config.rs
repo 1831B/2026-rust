@@ -14,6 +14,9 @@ pub const LIFT_RIGHT_REVERSED: bool = true;
 pub const CLAW_PORT: u8 = 16;
 pub const CLAW_REVERSED: bool = false;
 
+/// Set to true if forward drive (joystick up) moves the robot backward.
+pub const DRIVE_REVERSED: bool = true;
+
 pub const IMU_PORT: u8 = 13;
 pub const IMU2_PORT: u8 = 14;
 pub const FORWARD_TRACKER_PORT: u8 = 18;
