@@ -147,7 +147,7 @@ impl DriverControl {
             dt.emergency_stop();
             lift.stop();
             let _ = controller.try_rumble("---");
-            let _ = controller.try_set_text("!! E-STOP !!", 0, 0);
+            let _ = controller.try_set_text("!! E-STOP !!", 1, 1);
             sleep(core::time::Duration::from_millis(1500)).await;
         }
 
@@ -185,26 +185,26 @@ impl DriverControl {
                     };
                     let ln1 = format!("Lft:{:.0} Claw:{}", lift.position(), claw_str);
                     let ln2 = format!("B:{:.0}%", vexide::battery::capacity() * 100.0);
-                    let _ = controller.try_set_text(&ln0, 0, 0);
-                    let _ = controller.try_set_text(&ln1, 1, 0);
-                    let _ = controller.try_set_text(&ln2, 2, 0);
+                    let _ = controller.try_set_text(&ln0, 1, 1);
+                    let _ = controller.try_set_text(&ln1, 2, 1);
+                    let _ = controller.try_set_text(&ln2, 3, 1);
                 }
                 1 => {
                     let t0 = format!("DrvL:{:.0}C R:{:.0}C", dt.left_temp(), dt.right_temp());
                     let t1 = format!("LftL:{:.0}C R:{:.0}C", lift.left_temp(), lift.right_temp());
                     let t2 = format!("Claw:{:.0}C", top_mech.claw_temp());
-                    let _ = controller.try_set_text(&t0, 0, 0);
-                    let _ = controller.try_set_text(&t1, 1, 0);
-                    let _ = controller.try_set_text(&t2, 2, 0);
+                    let _ = controller.try_set_text(&t0, 1, 1);
+                    let _ = controller.try_set_text(&t1, 2, 1);
+                    let _ = controller.try_set_text(&t2, 3, 1);
                 }
                 2 => {
                     let pose = odom.get_pose();
                     let p0 = format!("X:{:.1} Y:{:.1}", pose.x, pose.y);
                     let p1 = format!("Hdg:{:.1}", pose.heading);
                     let p2 = format!("Batt:{:.2}V", vexide::battery::voltage());
-                    let _ = controller.try_set_text(&p0, 0, 0);
-                    let _ = controller.try_set_text(&p1, 1, 0);
-                    let _ = controller.try_set_text(&p2, 2, 0);
+                    let _ = controller.try_set_text(&p0, 1, 1);
+                    let _ = controller.try_set_text(&p1, 2, 1);
+                    let _ = controller.try_set_text(&p2, 3, 1);
                 }
                 _ => {}
             }

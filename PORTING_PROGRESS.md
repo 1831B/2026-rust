@@ -93,7 +93,7 @@ Code passes `RUSTFLAGS="-D warnings"` with zero warnings across all modules.
 | `Controller::get_digital_new_press(BTN)` | `state.button_a.is_now_pressed()` | Poll `controller.state()` each loop |
 | `Controller::get_analog(STICK)` | `state.left_stick.y_raw()` | Returns `i8` (-127..127) |
 | `Controller::rumble(pattern)` | `controller.try_rumble(pattern)` | Non-blocking |
-| `Controller::set_text(row, col, text)` | `controller.try_set_text(text, row, col)` | Non-blocking |
+| `Controller::set_text(row, col, text)` | `controller.try_set_text(text, line, col)` | Non-blocking. **1-indexed** (lines 1..=3, cols 1..=19) |
 | `pros::lcd::*` | `Display::fill(&shape, color)` / `Display::stroke(&shape, color)` | `Line` only impls `Fill`, not `Stroke` — use `fill` for lines |
 | `pros::battery::get_capacity()` (%) | `vexide::battery::capacity()` | Returns 0.0–1.0, multiply by 100 for percentage |
 | `pros::battery::get_voltage()` (mV) | `vexide::battery::voltage()` | Returns Volts directly |
