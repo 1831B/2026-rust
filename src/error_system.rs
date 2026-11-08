@@ -13,9 +13,10 @@ pub enum ErrorCode {
     LowBattery,
     MotorOverheat,
     ImuMismatch,
+    MotionFault,
 }
 
-pub const ERROR_COUNT: usize = 10;
+pub const ERROR_COUNT: usize = 11;
 
 impl ErrorCode {
     pub const ALL: [ErrorCode; ERROR_COUNT] = [
@@ -29,6 +30,7 @@ impl ErrorCode {
         ErrorCode::LowBattery,
         ErrorCode::MotorOverheat,
         ErrorCode::ImuMismatch,
+        ErrorCode::MotionFault,
     ];
 
     pub const fn name(&self) -> &'static str {
@@ -43,6 +45,7 @@ impl ErrorCode {
             Self::LowBattery => "Low Battery",
             Self::MotorOverheat => "Motor Overheat",
             Self::ImuMismatch => "IMU Mismatch",
+            Self::MotionFault => "Motion Fault",
         }
     }
 }

@@ -60,6 +60,7 @@ pub async fn route_mid_wall(
     let sense = if flip_x != flip_y { -1.0 } else { 1.0 };
     let turned = |deg: f64| wrap360(facing + sense * deg);
 
+    motion::clear_fault();
     ctx.odom.set_field_pose(x_fn(config::ROBOT_LENGTH / 2.0), y_fn(field::MID), facing);
     ctx.mcl.set_pose(x_fn(config::ROBOT_LENGTH / 2.0), y_fn(field::MID), facing);
 

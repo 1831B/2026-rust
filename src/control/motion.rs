@@ -1,10 +1,29 @@
 use std::f64::consts::PI;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 use vexide::prelude::*;
 use crate::config;
+use crate::error_system::{ErrorCode, Severity};
 use crate::control::pid::Pid;
 use crate::subsystems::drivetrain::Drivetrain;
 use crate::subsystems::odometry::{Odometry, OdometryContext};
+
+static FAULT: AtomicBool = AtomicBool::new(false);
+
+pub fn faulted() -> bool {
+    FAULT.load(Ordering::SeqCst)
+}
+
+pub fn clear_fault() {
+    FAULT.store(false, Ordering::SeqCst);
+}
+
+fn raise_fault(dt: &mut Drivetrain, ctx: &mut OdometryContext<'_>, why: &str) {
+    FAULT.store(true, Ordering::SeqCst);
+    dt.brake();
+    ctx.errors.set(ErrorCode::MotionFault, Severity::Critical, why);
+    println!("MOTION FAULT: {}", why);
+}
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Point {
@@ -49,6 +68,9 @@ pub async fn drive_distance(
     max_voltage: f64,
     timeout_ms: f64,
 ) {
+    if faulted() {
+        return;
+    }
     const DEG_PER_INCH: f64 =
         360.0 / (config::DRIVE_WHEEL_DIAMETER * PI * config::DRIVE_GEAR_RATIO);
     let mut drive_pid = Pid::new(
@@ -77,12 +99,23 @@ pub async fn drive_distance(
     let mut lv = 0.0;
     let mut rv = 0.0;
     let t0 = Instant::now();
+    let mut bad_since: Option<Instant> = None;
 
     loop {
         ctx.step(dt);
         let traveled = ((dt.left_position() - start_l) + (dt.right_position() - start_r)) / 2.0;
         let err = target_ticks - traveled;
         let h_err = normalize_angle(start_h - ctx.odom.pose_heading);
+
+        if h_err.abs() > 60.0 {
+            let since = *bad_since.get_or_insert_with(Instant::now);
+            if since.elapsed().as_millis() > 200 {
+                raise_fault(dt, ctx, "heading lost while driving");
+                return;
+            }
+        } else {
+            bad_since = None;
+        }
 
         let drive_out_mv = drive_pid.update(err).clamp(-max_voltage * 1000.0, max_voltage * 1000.0);
         let head_out_mv = head_pid.update(h_err).clamp(-max_voltage * 400.0, max_voltage * 400.0);
@@ -167,6 +200,9 @@ pub async fn turn_to_heading(
     max_voltage: f64,
     timeout_ms: f64,
 ) {
+    if faulted() {
+        return;
+    }
     let mut pid = Pid::new(
         config::TURN_KP,
         config::TURN_KI,
@@ -180,6 +216,8 @@ pub async fn turn_to_heading(
     let t0 = Instant::now();
     let mut best_err = normalize_angle(heading - ctx.odom.pose_heading).abs();
     let mut runaway_since: Option<Instant> = None;
+    let mut window_t = Instant::now();
+    let mut window_h = ctx.odom.pose_heading;
 
     loop {
         ctx.step(dt);
@@ -189,11 +227,20 @@ pub async fn turn_to_heading(
         if abs_err > best_err + 25.0 && abs_err > 30.0 {
             let since = *runaway_since.get_or_insert_with(Instant::now);
             if since.elapsed().as_millis() > 150 {
-                println!("turn_to_heading aborted: error grew from {:.1} to {:.1} deg, check IMU direction", best_err, abs_err);
-                break;
+                raise_fault(dt, ctx, "turn went the wrong way, check IMU");
+                return;
             }
         } else {
             runaway_since = None;
+        }
+        if window_t.elapsed().as_millis() >= 500 {
+            let moved = normalize_angle(ctx.odom.pose_heading - window_h).abs();
+            if abs_err > 10.0 && moved < 1.0 {
+                raise_fault(dt, ctx, "heading not changing while turning");
+                return;
+            }
+            window_t = Instant::now();
+            window_h = ctx.odom.pose_heading;
         }
         let mut out_mv = pid.update(err);
         out_mv += (config::TURN_MIN_VOLTAGE * 1000.0 * (err.abs() / 2.0).min(1.0)).copysign(err);
@@ -233,6 +280,9 @@ pub async fn move_to_point(
     max_voltage: f64,
     timeout_ms: f64,
 ) {
+    if faulted() {
+        return;
+    }
     turn_to_point(dt, ctx, x, y, max_voltage * 0.8, 2000.0).await;
 
     const DEG_PER_INCH: f64 =
@@ -261,7 +311,11 @@ pub async fn move_to_point(
     loop {
         ctx.step(dt);
         let d = dist_to_point(ctx.odom, x, y);
-        let h_err = normalize_angle(angle_to_point(ctx.odom, x, y) - ctx.odom.pose_heading);
+        let h_err = if d < 3.0 {
+            0.0
+        } else {
+            normalize_angle(angle_to_point(ctx.odom, x, y) - ctx.odom.pose_heading)
+        };
 
         let drive_out_mv = drive_pid.update(d * DEG_PER_INCH).clamp(-max_voltage * 1000.0, max_voltage * 1000.0);
         let head_out_mv = head_pid.update(h_err).clamp(-max_voltage * 500.0, max_voltage * 500.0);
@@ -288,6 +342,9 @@ pub async fn follow_path(
     lookahead: f64,
     max_voltage: f64,
 ) {
+    if faulted() {
+        return;
+    }
     if path.is_empty() {
         return;
     }
@@ -348,6 +405,9 @@ pub async fn swing_turn(
     max_voltage: f64,
     timeout_ms: f64,
 ) {
+    if faulted() {
+        return;
+    }
     let mut pid = Pid::new(
         config::SWING_KP,
         config::SWING_KI,
